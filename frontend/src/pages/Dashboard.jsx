@@ -1,53 +1,56 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Calendar, Stethoscope, CreditCard, ArrowUpRight, Activity, Clock } from 'lucide-react';
+import { Users, Calendar, CreditCard, ArrowUpRight, Activity, Clock, Stethoscope } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
+import api from '../utils/axiosConfig';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock dashboard stats
-  const stats = [
-    {
-      name: 'Total Patients',
-      value: '1,284',
-      change: '+12% from last month',
-      icon: Users,
-      color: 'border-primary',
-      iconColor: 'text-primary bg-primary-light',
-    },
-    {
-      name: 'Today\'s Appointments',
-      value: '42',
-      change: '8 pending review',
-      icon: Calendar,
-      color: 'border-secondary',
-      iconColor: 'text-secondary bg-secondary-light',
-    },
-    {
-      name: 'Doctors on Duty',
-      value: '18',
-      change: '4 specialties active',
-      icon: Stethoscope,
-      color: 'border-warning',
-      iconColor: 'text-warning-dark bg-warning-light',
-    },
-    {
-      name: 'Pending Invoices',
-      value: '24',
-      change: '$4,820 outstanding',
-      icon: CreditCard,
-      color: 'border-accent',
-      iconColor: 'text-accent bg-accent-light',
-    },
-  ];
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const { data } = await api.get('/stats');
+        setStats([
+          {
+            name: 'Total Patients',
+            value: data.totalPatients.toLocaleString(),
+            change: 'Live patient registry',
+            icon: Users,
+            color: 'border-primary',
+            iconColor: 'text-primary bg-primary-light',
+          },
+          {
+            name: 'Today\'s Appointments',
+            value: data.todaysAppointments.toLocaleString(),
+            change: 'Scheduled for today',
+            icon: Calendar,
+            color: 'border-secondary',
+            iconColor: 'text-secondary bg-secondary-light',
+          },
+          {
+            name: 'Revenue Collected',
+            value: `$${Number(data.totalRevenue).toLocaleString()}`,
+            change: 'Paid invoices only',
+            icon: CreditCard,
+            color: 'border-accent',
+            iconColor: 'text-accent bg-accent-light',
+          }
+        ]);
+        setActivities(data.recentActivity || []);
+      } catch (error) {
+        setStats([]);
+        setActivities([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Mock recent activities list
-  const activities = [
-    { id: 1, type: 'appointment', text: 'Dr. Sarah Connor confirmed appointment for Alice Johnson', time: '10 mins ago' },
-    { id: 2, type: 'patient', text: 'New patient registration: Bob Myers (ID: #4092)', time: '45 mins ago' },
-    { id: 3, type: 'billing', text: 'Invoice #1024 paid by check ($350) for David Vance', time: '1.5 hours ago' },
-    { id: 4, type: 'doctor', text: 'Dr. Robert Chen updated consultation hours for Friday', time: '3 hours ago' },
-  ];
+    loadStats();
+  }, []);
 
   // Container variants for staggered entrance animation
   const containerVariants = {
@@ -89,27 +92,37 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Stats Grid */}
-      <motion.div variants={itemVariants} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={stat.name}
-              className={`rounded-card border-t-4 ${stat.color} bg-white p-6 shadow-card transition-all duration-250 hover:shadow-card-hover hover:-translate-y-0.5`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-neutral-500">{stat.name}</span>
-                <div className={`rounded-full p-2.5 ${stat.iconColor}`}>
-                  <Icon className="h-5 w-5" />
+      <motion.div variants={itemVariants} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="rounded-card border border-neutral-100 bg-white p-6 shadow-card">
+              <div className="h-4 w-24 rounded bg-neutral-100" />
+              <div className="mt-4 h-8 w-20 rounded bg-neutral-100" />
+              <div className="mt-3 h-3 w-32 rounded bg-neutral-100" />
+            </div>
+          ))
+        ) : (
+          stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.name}
+                className={`rounded-card border-t-4 ${stat.color} bg-white p-6 shadow-card transition-all duration-250 hover:shadow-card-hover hover:-translate-y-0.5`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-neutral-500">{stat.name}</span>
+                  <div className={`rounded-full p-2.5 ${stat.iconColor}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-3xl font-extrabold text-neutral-800">{stat.value}</span>
+                  <p className="mt-1 text-xs text-neutral-400 font-medium">{stat.change}</p>
                 </div>
               </div>
-              <div className="mt-4">
-                <span className="text-3xl font-extrabold text-neutral-800">{stat.value}</span>
-                <p className="mt-1 text-xs text-neutral-400 font-medium">{stat.change}</p>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </motion.div>
 
       {/* Main Grid Content */}
@@ -124,18 +137,29 @@ const Dashboard = () => {
             <h3 className="text-lg font-bold text-neutral-800 font-sans">Live System Activity</h3>
           </div>
           <div className="mt-4 divide-y divide-neutral-100">
-            {activities.map((act) => (
-              <div key={act.id} className="flex items-start justify-between py-4 first:pt-0 last:pb-0">
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 flex h-2 w-2 shrink-0 rounded-full bg-secondary-400"></div>
-                  <p className="text-sm text-neutral-600 leading-relaxed">{act.text}</p>
+            {loading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex items-start justify-between py-4 first:pt-0 last:pb-0">
+                  <div className="h-4 w-2/3 rounded bg-neutral-100" />
+                  <div className="h-4 w-20 rounded bg-neutral-100" />
                 </div>
-                <div className="flex items-center gap-1 shrink-0 pl-4 text-xs text-neutral-400 font-medium">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{act.time}</span>
+              ))
+            ) : activities.length === 0 ? (
+              <p className="py-6 text-sm text-neutral-500">No recent activity yet.</p>
+            ) : (
+              activities.map((act) => (
+                <div key={act.id} className="flex items-start justify-between py-4 first:pt-0 last:pb-0">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-2 w-2 shrink-0 rounded-full bg-secondary-400"></div>
+                    <p className="text-sm text-neutral-600 leading-relaxed">{act.text}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 pl-4 text-xs text-neutral-400 font-medium">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{act.time}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </motion.div>
 

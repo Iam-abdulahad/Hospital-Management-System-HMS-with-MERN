@@ -1,4 +1,4 @@
-# HealTrack — Product Requirements Document (PRD)
+ # HealTrack — Product Requirements Document (PRD)
 
 > **Document ID:** HT-PRD-2026-001  
 > **Version:** 1.0.0  

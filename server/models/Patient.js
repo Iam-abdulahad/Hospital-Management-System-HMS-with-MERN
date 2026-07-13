@@ -7,7 +7,9 @@ const patientSchema = new mongoose.Schema({
     gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
     contact: { type: String, required: true },
     address: { type: String, required: true },
-    medicalHistory: [{ type: String }]
+    medicalHistory: [{ type: String }],
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date }
 }, { timestamps: true });
 
 // Auto-generate patientId before saving if not provided

@@ -4,8 +4,8 @@ import { LayoutDashboard, Users, Calendar, Stethoscope, CreditCard, HeartPulse }
 const Sidebar = () => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Patients', href: '/patients', icon: Users },
-    { name: 'Appointments', href: '/appointments', icon: Calendar },
+    { name: 'Patients', href: '/dashboard/patients', icon: Users },
+    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Doctors', href: '/doctors', icon: Stethoscope },
     { name: 'Invoices', href: '/invoices', icon: CreditCard },
   ];
