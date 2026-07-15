@@ -1,14 +1,39 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, Calendar, Stethoscope, CreditCard, HeartPulse } from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
 
 const Sidebar = () => {
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Patients', href: '/dashboard/patients', icon: Users },
-    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-    { name: 'Doctors', href: '/doctors', icon: Stethoscope },
-    { name: 'Invoices', href: '/invoices', icon: CreditCard },
-  ];
+  const { user } = useAuth();
+
+  // Define role-based navigation
+  const getNavigation = () => {
+    if (!user?.role) return [];
+
+    const baseNav = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }
+    ];
+
+    const roleNav = {
+      admin: [
+        { name: 'Patients', href: '/dashboard/patients', icon: Users },
+        { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
+        { name: 'Doctors', href: '/doctors', icon: Stethoscope },
+        { name: 'Invoices', href: '/invoices', icon: CreditCard },
+      ],
+      doctor: [
+        { name: 'My Patients', href: '/dashboard/my-patients', icon: Users },
+        { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
+      ],
+      receptionist: [
+        { name: 'Patients', href: '/dashboard/patients', icon: Users },
+        { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
+      ],
+    };
+
+    return [...baseNav, ...(roleNav[user.role] || [])];
+  };
+
+  const navigation = getNavigation();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-20 flex w-64 flex-col bg-primary-600 text-white shadow-sidebar">
@@ -17,6 +42,15 @@ const Sidebar = () => {
         <HeartPulse className="h-8 w-8 text-secondary-300 animate-pulse-soft" />
         <span className="text-xl font-bold tracking-tight">HealTrack</span>
       </div>
+
+      {/* User Role Badge */}
+      {user && (
+        <div className="px-4 py-3 border-b border-primary-500">
+          <p className="text-xs text-primary-200">Logged in as</p>
+          <p className="text-sm font-medium text-white capitalize">{user.name}</p>
+          <p className="text-xs text-primary-300 capitalize">{user.role}</p>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-4 py-6">

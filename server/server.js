@@ -6,6 +6,7 @@ const User = require('./models/User');
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 
 const app = express();
@@ -72,6 +73,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/stats', statsRoutes);
 
 // Start server

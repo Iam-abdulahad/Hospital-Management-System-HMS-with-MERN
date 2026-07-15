@@ -8,7 +8,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Patients from './pages/Patients'
+import PatientDetails from './pages/PatientDetails'
 import Appointments from './pages/Appointments'
+import MyPatients from './pages/MyPatients'
 
 const Doctors = () => <div className="p-6 bg-white rounded-card shadow-card"><h2 className="text-2xl font-bold mb-4 text-neutral-800">Doctors Directory</h2><p className="text-neutral-500">Manage doctors profiles, specializations, and availability schedules.</p></div>;
 const Invoices = () => <div className="p-6 bg-white rounded-card shadow-card"><h2 className="text-2xl font-bold mb-4 text-neutral-800">Billing & Invoices</h2><p className="text-neutral-500">Track invoices, billing statements, and payments processing.</p></div>;
@@ -28,7 +30,9 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="dashboard/patients" element={<Patients />} />
+              <Route path="dashboard/patient/:id" element={<PatientDetails />} />
               <Route path="dashboard/appointments" element={<Appointments />} />
+              <Route path="dashboard/my-patients" element={<MyPatients />} />
               <Route path="doctors" element={<Doctors />} />
               <Route path="invoices" element={<Invoices />} />
             </Route>

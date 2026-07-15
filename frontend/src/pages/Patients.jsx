@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, UserRoundPlus } from 'lucide-react';
 import { createPatient, getPatients } from '../services/patientService';
@@ -13,6 +14,7 @@ const emptyForm = {
 };
 
 const Patients = () => {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,7 +118,11 @@ const Patients = () => {
                 </tr>
               ) : (
                 patients.map((patient) => (
-                  <tr key={patient._id} className="hover:bg-primary-light/40">
+                  <tr
+                    key={patient._id}
+                    onClick={() => navigate(`/dashboard/patient/${patient._id}`)}
+                    className="hover:bg-primary-light/40 cursor-pointer transition"
+                  >
                     <td className="px-6 py-4 text-sm font-medium text-primary">{patient.patientId}</td>
                     <td className="px-6 py-4 text-sm text-neutral-800">{patient.name}</td>
                     <td className="px-6 py-4 text-sm text-neutral-600">{patient.age}</td>
