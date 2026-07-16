@@ -8,6 +8,7 @@ const patientRoutes = require('./routes/patientRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
 const app = express();
 const allowedOrigins = [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:5173'];
@@ -75,6 +76,7 @@ app.use('/api/patients', patientRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

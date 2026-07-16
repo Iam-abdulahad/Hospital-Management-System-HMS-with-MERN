@@ -21,14 +21,18 @@ const statusStyles = {
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
-  const [patients, setPatients] = useState([]);
-  const [doctors, setDoctors] = useState([]);
+  const [patientsList, setPatientsList] = useState([]);
+  const [doctorsList, setDoctorsList] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const loadAppointments = async (selectedStatus = '') => {
     setLoading(true);
@@ -36,37 +40,49 @@ const Appointments = () => {
       const data = await getAppointments(selectedStatus);
       setAppointments(data);
     } catch (error) {
-      setMessage(error?.response?.data?.message || 'Unable to load appointments');
+      setErrorMessage(error?.response?.data?.message || 'Unable to load appointments');
     } finally {
       setLoading(false);
     }
   };
 
   const loadOptions = async () => {
+    setPatientsLoading(true);
+    setDoctorsLoading(true);
+    setErrorMessage('');
     try {
+      // Fetch patients and doctors in parallel
       const [patientsResponse, doctorsResponse] = await Promise.all([
         api.get('/patients'),
         api.get('/auth/doctors')
       ]);
-      setPatients(patientsResponse.data);
-      setDoctors(doctorsResponse.data);
+
+      setPatientsList(patientsResponse.data || []);
+      setDoctorsList(doctorsResponse.data || []);
     } catch (error) {
-      setMessage('Unable to load patient and doctor options');
+      console.error('loadOptions error:', error);
+      setErrorMessage('Unable to load patient and doctor options');
+    } finally {
+      setPatientsLoading(false);
+      setDoctorsLoading(false);
     }
   };
 
   useEffect(() => {
     loadOptions();
     loadAppointments(statusFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStatusChange = async (id, newStatus) => {
     try {
       await updateAppointmentStatus(id, newStatus);
       await loadAppointments(statusFilter);
-      setMessage('Appointment status updated');
+      setSuccessMessage('Appointment status updated');
+      setErrorMessage('');
     } catch (error) {
-      setMessage(error?.response?.data?.message || 'Unable to update status');
+      setErrorMessage(error?.response?.data?.message || 'Unable to update status');
+      setSuccessMessage('');
     }
   };
 
@@ -78,23 +94,42 @@ const Appointments = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
     try {
       await createAppointment({
         ...formData,
         date: new Date(formData.date).toISOString()
       });
+
       setFormData(emptyForm);
       setIsModalOpen(false);
-      setMessage('Appointment booked successfully');
+      setSuccessMessage('Appointment booked successfully');
       await loadAppointments(statusFilter);
     } catch (error) {
-      setMessage(error?.response?.data?.message || 'Unable to book appointment');
+      console.error('create appointment error:', error);
+      if (error?.response?.status === 409) {
+        // Double-booking
+        setErrorMessage(error.response.data?.message || 'Doctor is already booked at this time.');
+      } else if (error?.response?.data?.message) {
+        setErrorMessage(error.response.data.message);
+      } else {
+        setErrorMessage('Unable to book appointment');
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const visibleAppointments = useMemo(() => appointments, [appointments]);
+  const visibleAppointments = useMemo(() => {
+    return appointments.filter(apt => {
+      const patientName = apt.patientId?.name?.toLowerCase() || '';
+      const doctorName = apt.doctorId?.name?.toLowerCase() || '';
+      const searchLower = searchTerm.toLowerCase();
+      return patientName.includes(searchLower) || doctorName.includes(searchLower);
+    });
+  }, [appointments, searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -104,6 +139,13 @@ const Appointments = () => {
           <p className="text-sm text-neutral-500">Track upcoming consultations and update appointment states.</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
+          <input 
+            type="text" 
+            placeholder="Search by patient or doctor name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex items-center gap-2 rounded-button border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700 outline-none focus:border-primary focus:bg-white"
+          />
           <label className="flex items-center gap-2 rounded-button border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-500">
             <Search className="h-4 w-4" />
             <select value={statusFilter} onChange={(event) => handleFilter(event.target.value)} className="bg-transparent outline-none">
@@ -121,7 +163,12 @@ const Appointments = () => {
         </div>
       </div>
 
-      {message ? <div className="rounded-button border border-secondary-light bg-secondary-light/70 px-4 py-3 text-sm text-secondary">{message}</div> : null}
+      {errorMessage ? (
+        <div className="rounded-button border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</div>
+      ) : null}
+      {successMessage ? (
+        <div className="rounded-button border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{successMessage}</div>
+      ) : null}
 
       <div className="overflow-hidden rounded-card border border-neutral-100 bg-white shadow-card">
         <div className="overflow-x-auto">
@@ -185,14 +232,26 @@ const Appointments = () => {
                   Patient
                   <select required value={formData.patientId} onChange={(event) => setFormData({ ...formData, patientId: event.target.value })} className="mt-1 w-full rounded-input border border-neutral-200 px-3 py-2 outline-none focus:border-primary">
                     <option value="">Select patient</option>
-                    {patients.map((patient) => <option key={patient._id} value={patient._id}>{patient.name}</option>)}
+                    {patientsLoading ? (
+                      <option value="" disabled>Loading...</option>
+                    ) : patientsList.length === 0 ? (
+                      <option value="" disabled>No patients found</option>
+                    ) : (
+                      patientsList.map((patient) => <option key={patient._id} value={patient._id}>{patient.name}</option>)
+                    )}
                   </select>
                 </label>
                 <label className="text-sm font-medium text-neutral-700">
                   Doctor
                   <select required value={formData.doctorId} onChange={(event) => setFormData({ ...formData, doctorId: event.target.value })} className="mt-1 w-full rounded-input border border-neutral-200 px-3 py-2 outline-none focus:border-primary">
                     <option value="">Select doctor</option>
-                    {doctors.map((doctor) => <option key={doctor._id} value={doctor._id}>{doctor.name}</option>)}
+                    {doctorsLoading ? (
+                      <option value="" disabled>Loading...</option>
+                    ) : doctorsList.length === 0 ? (
+                      <option value="" disabled>No doctors found</option>
+                    ) : (
+                      doctorsList.map((doctor) => <option key={doctor._id} value={doctor._id}>{doctor.name}</option>)
+                    )}
                   </select>
                 </label>
                 <label className="text-sm font-medium text-neutral-700">

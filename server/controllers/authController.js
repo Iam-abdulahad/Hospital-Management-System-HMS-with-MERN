@@ -121,8 +121,89 @@ const getDoctors = async (req, res) => {
     }
 };
 
+// @desc    Get all staff (doctors, receptionists, admins)
+// @route   GET /api/auth/staff
+// @access  Private/Admin
+const getAllStaff = async (req, res) => {
+    try {
+        if (!isDatabaseReady()) {
+            return res.status(503).json({ message: 'Database is unavailable. Please try again shortly.' });
+        }
+
+        const staff = await User.find({ role: { $in: ['admin', 'doctor', 'receptionist'] } })
+            .select('_id name email role isActive createdAt');
+        
+        return res.json(staff);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// @desc    Update staff role
+// @route   PUT /api/auth/staff/:id/role
+// @access  Private/Admin
+const updateStaffRole = async (req, res) => {
+    try {
+        const { role } = req.body;
+        const { id } = req.params;
+
+        if (!role) {
+            return res.status(400).json({ message: 'Please provide a role' });
+        }
+
+        const validRoles = ['admin', 'doctor', 'receptionist'];
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({ message: `Invalid role. Must be one of: ${validRoles.join(', ')}` });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: 'Invalid staff ID' });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            id, 
+            { role },
+            { new: true }
+        ).select('_id name email role isActive');
+
+        if (!user) {
+            return res.status(404).json({ message: 'Staff member not found' });
+        }
+
+        return res.json({ message: 'Staff role updated successfully', user });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// @desc    Delete staff member
+// @route   DELETE /api/auth/staff/:id
+// @access  Private/Admin
+const deleteStaff = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: 'Invalid staff ID' });
+        }
+
+        const user = await User.findByIdAndDelete(id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'Staff member not found' });
+        }
+
+        return res.json({ message: 'Staff member deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
 module.exports = {
     register,
     login,
-    getDoctors
+    getDoctors,
+    getAllStaff,
+    updateStaffRole,
+    deleteStaff
 };

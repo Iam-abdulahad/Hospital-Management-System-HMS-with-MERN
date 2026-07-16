@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, Stethoscope, CreditCard, HeartPulse } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Stethoscope, CreditCard, HeartPulse, Shield } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 
 const Sidebar = () => {
@@ -17,6 +17,7 @@ const Sidebar = () => {
       admin: [
         { name: 'Patients', href: '/dashboard/patients', icon: Users },
         { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
+        { name: 'Staff', href: '/dashboard/staff', icon: Shield },
         { name: 'Doctors', href: '/doctors', icon: Stethoscope },
         { name: 'Invoices', href: '/invoices', icon: CreditCard },
       ],
@@ -27,6 +28,7 @@ const Sidebar = () => {
       receptionist: [
         { name: 'Patients', href: '/dashboard/patients', icon: Users },
         { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
+        { name: 'Invoices', href: '/invoices', icon: CreditCard },
       ],
     };
 
